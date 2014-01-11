@@ -95,7 +95,7 @@ describe DCI::Context do
         expect {TestingUseContext.new(:role1 => @player1, :role2 => @player2, :extra_arg => :extra)}.not_to raise_error
       end
 
-      it("An shorter way to instantiate a context is through the class method []...") do
+      it("A shorter way to instantiate a context is through the class method []...") do
         expect {TestingUseContext[:role1 => @player1, :role2 => @player2, :extra_arg => :extra]}.not_to raise_error
       end
       it("...which is equivalent to create a new instance and call #run on it.") do

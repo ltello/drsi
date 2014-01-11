@@ -160,6 +160,7 @@ module DCI
       # Disassociates every role from the playing object.
       def players_unplay_role!
         roles.keys.each do |rolekey|
+          puts "Unplaying last_role (:#{rolekey}) from #{@_players[rolekey]}"
           @_players[rolekey].__unplay_last_role!
           # 'instance_variable_set(:"@#{rolekey}", nil)
         end

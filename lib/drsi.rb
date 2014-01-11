@@ -1,5 +1,5 @@
 require 'drsi/version'
-require 'drsi/kernel'
+require 'drsi/object'
 require 'drsi/dci/context'
 
 module Drsi

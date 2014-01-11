@@ -10,24 +10,23 @@ module Rolable
 
   # Make an object play the role defined as a module in 'mod'
   def __play_role!(role_klass, context)
-    __new_role = __next_empty_role
-    __new_role.__copy_instance_methods_from(role_klass)
-    __new_role.send(:define_method, :context) {context}
+    new_role = __next_empty_role
+    new_role.__copy_instance_methods_from(role_klass)
+    new_role.send(:define_method, :context) {context}
   end
 
   # Make an object stop playing the last role it plays, if any.
   def __unplay_last_role!
     if role = __last_role
-      methods = public_instance_methods(false) + protected_instance_methods(false) + private_instance_methods(false)
+      methods = role.public_instance_methods(false) + role.protected_instance_methods(false) + role.private_instance_methods(false)
+      puts "removing these methods from #{role}: #{methods.join(', ')}"
       methods.each {|name| role.send(:remove_method, name)}
-      self.__last_role_index -= 1
+      @__last_role_index = __last_role_index - 1
     end
   end
 
 
   private
-
-    attr_writer :__last_role_index
 
     def __roles
       @__roles ||= Array.new
@@ -44,7 +43,7 @@ module Rolable
     # Returns the highest role module free of methods. If none, creates a new empty module ready to be filled with
     # role instance methods.
     def __next_empty_role
-      self.__last_role_index += 1
+      @__last_role_index = __last_role_index + 1
       __add_empty_role! unless __last_role
       __last_role
     end
