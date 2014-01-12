@@ -2,11 +2,26 @@ require 'drsi'
 
 
 class CheckingAccount
-  attr_reader   :account_id
+  attr_reader   :account_id, :currency
   attr_accessor :balance
 
-  def initialize(account_id, initial_balance=0)
-    @account_id, @balance = account_id, initial_balance
+  def initialize(account_id, initial_balance)
+    @account_id  = account_id
+    b, @currency = initial_balance.split(' ')
+    @balance     = b.to_i
+  end
+end
+
+class Amount
+  attr_reader :quantity, :currency
+
+  def initialize(data)
+    q, @currency = data.split(' ')
+    @quantity    = q.to_i
+  end
+
+  def to_s
+    "#{quantity}#{currency}"
   end
 end
 
@@ -16,27 +31,29 @@ class MoneyTransferContext < DCI::Context
   # Roles Definitions
 
     role :source_account do
-      def run_transfer_of(amount)
-        self.balance -= amount
-        puts "\t\tAccount(\##{account_id}) sent #{amount}€ to Account(\##{target_account.account_id})."
+      def run_transfer
+        self.balance -= amount.quantity
+        puts "\t\tAccount(\##{account_id}) sent #{amount} to Account(\##{target_account.account_id})."
       end
     end
 
     role :target_account do
-      def run_transfer_of(amount)
-        self.balance += amount
-        puts "\t\tAccount(\##{account_id}) received #{amount}€ from Account(\##{source_account.account_id})."
+      def run_transfer
+        self.balance += amount.quantity
+        puts "\t\tAccount(\##{account_id}) received #{amount} from Account(\##{source_account.account_id})."
       end
     end
+
+    role :amount
 
 
   # Interactions
 
-    def run(amount=settings(:amount))
-      puts "\nMoney Transfer of #{amount}€ between Account(\##{source_account.account_id}) and Account(\##{target_account.account_id})"
+    def run
+      puts "\nMoney Transfer of #{amount} between Account(\##{source_account.account_id}) and Account(\##{target_account.account_id})"
       puts "\tBalances Before: #{balances}"
-      source_account.run_transfer_of(amount)
-      target_account.run_transfer_of(amount)
+      source_account.run_transfer
+      target_account.run_transfer
       puts "\tBalances After:  #{balances}"
     end
 
@@ -48,17 +65,16 @@ class MoneyTransferContext < DCI::Context
     end
 
     def balances
-      accounts.map {|account| "#{account.balance}€"}.join(' - ')
+      accounts.map {|account| "#{account.balance}#{account.currency}"}.join(' - ')
     end
 end
 
-acc1 = CheckingAccount.new(1, 1000)
-acc2 = CheckingAccount.new(2)
+acc1   = CheckingAccount.new(1, '1000 €')
+acc2   = CheckingAccount.new(2, '0 €')
+amount = Amount.new('200 €')
 
-MoneyTransferContext.new(:source_account => acc1,
-                         :target_account => acc2,
-                         :amount         => 200).run
-4.times do
+5.times do
   MoneyTransferContext.new(:source_account => acc1,
-                           :target_account => acc2).run(200)
+                           :target_account => acc2,
+                           :amount         => amount).run
 end
