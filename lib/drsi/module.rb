@@ -18,7 +18,6 @@ class Module
       module_exec(methods, type) do |methods, type|
         methods.each do |method|
           define_method(method.name) do |*args, &block|
-            puts "Method: #{method} - self: #{self}"
             method.bind(self).call(*args, &block)
           end
         end

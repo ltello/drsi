@@ -38,13 +38,14 @@ module DCI
 
         # Adds a new entry to the roles accumulator hash.
         def create_role_from(key, &block)
-          roles.merge!(key => create_role_subclass_from(key, &block))
+          roles.merge!(key => create_role_module_from(key, &block))
         end
 
         # Defines and return a new subclass of DCI::Role named after the given rolekey and with body the given block.
-        def create_role_subclass_from(rolekey, &block)
-          new_klass_name = rolekey.to_s.split(/\_+/).map(&:capitalize).join('')
-          const_set(new_klass_name, Class.new(::DCI::Role, &block))
+        def create_role_module_from(rolekey, &block)
+          new_mod_name = rolekey.to_s.split(/\_+/).map(&:capitalize).join('')
+          const_set(new_mod_name, Module.new(&block))
+          const_get(new_mod_name).tap {|mod| mod.send(:extend, ::DCI::Role)}
         end
 
         # Defines a private reader to allow a context instance access to the roleplayer object associated to the given rolekey.
@@ -54,18 +55,18 @@ module DCI
         end
 
         # After a new role is defined, you've got to create a reader method for this new role in the rest of context
-        # roles, and viceverse: create a reader method in the new role klass for each of the other roles in the context.
+        # roles, and viceverse: create a reader method in the new role mod for each of the other roles in the context.
         # This method does exactly this.
         def define_mate_roleplayers_readers_after_newrole(new_rolekey)
-          new_roleklass = roles[new_rolekey]
-          mate_roles    = mate_roles_of(new_rolekey)
-          mate_roles.each do |mate_rolekey, mate_roleklass|
-            mate_roleklass.send(:add_role_reader_for!, new_rolekey)
-            new_roleklass.send(:add_role_reader_for!, mate_rolekey)
+          new_role_mod = roles[new_rolekey]
+          mate_roles   = mate_roles_of(new_rolekey)
+          mate_roles.each do |mate_rolekey, mate_role_mod|
+            mate_role_mod.send(:add_role_reader_for!, new_rolekey)
+            new_role_mod.send(:add_role_reader_for!,  mate_rolekey)
           end
         end
 
-        # For a give role key, returns a hash with the rest of the roles (pair :rolekey => roleklass) in the context it belongs to.
+        # For a give role key, returns a hash with the rest of the roles (pair :rolekey => role_mod) in the context it belongs to.
         def mate_roles_of(rolekey)
           roles.dup.tap do |roles|
             roles.delete(rolekey)
@@ -152,15 +153,14 @@ module DCI
       #   - The player get access to the rest of players in its context through instance methods named after their role keys.
       #   - This context instance get access to this new role player through an instance method named after the role key.
       def assign_role_to_player!(rolekey, player)
-        role_klass = roles[rolekey]
-        player.__play_role!(role_klass, self)
+        role_mod = roles[rolekey]
+        player.__play_role!(role_mod, self)
         instance_variable_set(:"@#{rolekey}", player)
       end
 
       # Disassociates every role from the playing object.
       def players_unplay_role!
         roles.keys.each do |rolekey|
-          puts "Unplaying last_role (:#{rolekey}) from #{@_players[rolekey]}"
           @_players[rolekey].__unplay_last_role!
           # 'instance_variable_set(:"@#{rolekey}", nil)
         end

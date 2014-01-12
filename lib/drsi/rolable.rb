@@ -19,7 +19,6 @@ module Rolable
   def __unplay_last_role!
     if role = __last_role
       methods = role.public_instance_methods(false) + role.protected_instance_methods(false) + role.private_instance_methods(false)
-      puts "removing these methods from #{role}: #{methods.join(', ')}"
       methods.each {|name| role.send(:remove_method, name)}
       @__last_role_index = __last_role_index - 1
     end

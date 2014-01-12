@@ -18,7 +18,7 @@ describe DCI::Context do
 
       it("...a new dci context is ready to be used...") {TestingDefinitionContext.superclass.should be(DCI::Context)}
       it("...in which the developer can define roles...") do
-        TestingDefinitionContext.private_methods.should include("role")
+        TestingDefinitionContext.private_methods.map(&:to_s).should include("role")
       end
       it("...but privately inside the subclass.") {TestingDefinitionContext.should_not respond_to(:role)}
 
@@ -31,19 +31,19 @@ describe DCI::Context do
         TestingDefinitionContext.roles.should eq({:role_name => TestingDefinitionContext::RoleName})
         TestingDefinitionContext.new(:role_name => Object.new).send(:roles).should eq(:role_name => TestingDefinitionContext::RoleName)
       end
-      it("... where every ContextSubclass::Rolekey is a new class created at load time,...") do
-        TestingDefinitionContext.roles[:role_name].should be_a(Class)
+      it("... where every ContextSubclass::Rolekey is a new module created at load time,...") do
+        TestingDefinitionContext.roles[:role_name].should be_a(Module)
         TestingDefinitionContext.roles[:role_name].should be(TestingDefinitionContext::RoleName)
       end
       it("... named after the associated role_key...") do
         TestingDefinitionContext.const_defined?(:RoleName).should be(true)
       end
       it("... and defined after the block given to the associated role in its definition.") do
-        TestingDefinitionContext::RoleName.public_instance_methods.should include("role_name_method")
+        TestingDefinitionContext::RoleName.public_instance_methods.map(&:to_s).should include("role_name_method")
       end
 
       it("Inside the context subclass, the developer defines context methods (instance methods) that act as interactions.") do
-        TestingDefinitionContext.public_instance_methods(false).should include('interaction1')
+        TestingDefinitionContext.public_instance_methods(false).map(&:to_s).should include('interaction1')
       end
     end
   end
@@ -84,7 +84,7 @@ describe DCI::Context do
         expect {TestingUseContext.new(@player1, @player2)}.to raise_error
       end
       it("...with ALL the role_keys in the subclass as keys...") do
-        expect {TestingUseContext.new(:role1 => @player1)}.to raise_error('missing roles role2')
+        expect {TestingUseContext.new(:role1 => @player1)}.to raise_error(/missing roles(.+)role2/)
       end
       it("...and the objects to play those roles as values.") do
         @context_instance_1.interaction2
