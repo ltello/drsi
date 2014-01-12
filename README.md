@@ -69,9 +69,9 @@ Inside a context instance, every player object incorporates the behaviour (metho
 The Account instances above are players. They are accesible inside #run through #source_account and #target_account private methods.
 Also, every role player has private access to the rest of role players in the context.
 
-Unlike the Presenter approach in dci-ruby (where the object to play a role and the one inside the context playing it are associated but different), this extending/unextending approach preserves unique identity of objects playing roles.
+Unlike the Presenter approach in dci-ruby (where the object to play a role and the one inside the context playing it are associated but different), this injection approach preserves unique identity of objects playing roles.
 
-When instanciating a Context, the extra no-role pairs given as arguments are read-only attributes accessible via #settings:
+When instantiating a Context, the extra no-role pairs given as arguments are read-only attributes accessible via #settings:
 
     MoneyTransfer[:source_account => Account.new(1),
                   :target_account => Account.new(2),
