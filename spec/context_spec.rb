@@ -103,7 +103,7 @@ describe DCI::Context do
       end
 
 
-      it("Once instanciated...") {@context_instance_1.should be_a(TestingUseContext)}
+      it("Once instantiated...") {@context_instance_1.should be_a(TestingUseContext)}
       it("...you call an interaction (instance method) on it") do
         @context_instance_1.should respond_to(:interaction2)
       end

@@ -7,31 +7,46 @@ describe 'RolePlayers' do
     before(:all) do
       class TestingRoleplayersContext < DCI::Context
         role :role1 do
-          def rolemethod1
-            :rolemethod1_executed
-          end
+          def role1method1; :role1method1_executed end
+          def role1self; self end
         end
 
         role :role2 do
-          def rolemethod2
-            role1
-          end
+          def role2method1; role1 end
+          def role2self;   self  end
 
           private
-
-          def private_rolemethod2
-            :public_rolemethod_return_value
-          end
+          def private_role2method2; :private_rolemethod_return_value end
         end
 
-        def interaction1
-          role1
+        def check_role_interaccess; role2.role2method1 == role1 end
+
+        def check_role1_identity(obj)
+          [role1 == obj, role1.role1self == obj, role1.respond_to?(:role1method1), obj.respond_to?(:role1method1),
+           role1.role1method1 == :role1method1_executed, obj.role1method1 == :role1method1_executed].uniq == [true]
         end
 
-        def interaction2
-          role1.object_id - role2.object_id
+        def check_role2_identity(obj)
+          [role2 == obj, role2.role2self == obj, role2.respond_to?(:role2method1), obj.respond_to?(:role2method1),
+           role2.send(:private_role2method2) == :private_rolemethod_return_value,
+           obj.send(:private_role2method2)   == :private_rolemethod_return_value,
+           role2.role2method1 == role1, obj.role2method1 == role1].uniq == [true]
+        end
+
+        def access_role1_external_interface
+          role1.name
+        end
+
+        def check_role1_context_access
+          role1.context == self
+        end
+
+        def check_role1_settings_access
+         [!role1.respond_to?(:settings), role1.private_methods.map(&:to_s).include?('settings'),
+          role1.send(:settings) == settings].uniq == [true]
         end
       end
+
       @player1, @player2 = OpenStruct.new(:name => 'player1'), OpenStruct.new(:name => 'player2')
       @testing_roleplayers_context = TestingRoleplayersContext.new(:role1    => @player1,
                                                                    :role2    => @player2,
@@ -40,45 +55,29 @@ describe 'RolePlayers' do
                                                                    :setting3 => :three)
     end
 
-    it("...each one instance of the class defined after the role he plays...") do
-      @testing_roleplayers_context.send(:role1).should be_a(TestingRoleplayersContext::Role1)
-      @testing_roleplayers_context.send(:role2).should be_a(TestingRoleplayersContext::Role2)
-    end
-    it("...so they adquire the public instance methods defined in their role...") do
-      @testing_roleplayers_context.send(:role1).public_methods(false).should include('rolemethod1')
-      @testing_roleplayers_context.send(:role1).should respond_to(:rolemethod1)
-      @testing_roleplayers_context.send(:role1).rolemethod1.should eql(:rolemethod1_executed)
+    it("...that adquire the public instance methods defined in their role...") do
+      @testing_roleplayers_context.check_role1_identity(@player1).should be_true
     end
     it("...as well as the private ones.") do
-      @testing_roleplayers_context.send(:role2).private_methods(false).should include('private_rolemethod2')
-      @testing_roleplayers_context.send(:role2).should_not respond_to(:private_rolemethod2)
-      @testing_roleplayers_context.send(:role2).send(:private_rolemethod2).should eql(:public_rolemethod_return_value)
+      @testing_roleplayers_context.check_role2_identity(@player2).should be_true
     end
 
-    it("Also, through the private method #player") do
-      @testing_roleplayers_context.send(:role1).private_methods.should include('player')
+    it("They still preserve their identity") do
+      @testing_roleplayers_context.check_role1_identity(@player1).should be_true
     end
-    it("...they have access to the original object playing the role...") do
-      @testing_roleplayers_context.send(:role1).send(:player).should be(@player1)
-      @testing_roleplayers_context.send(:role2).send(:player).should be(@player2)
-    end
-    it("...and, therefore, its public interface.") do
-      @testing_roleplayers_context.send(:role1).send(:player).name.should eq('player1')
-      @testing_roleplayers_context.send(:role2).send(:player).name.should eq('player2')
+    it("...and therefore, their state and behaviour are accessible inside the context.") do
+      @testing_roleplayers_context.access_role1_external_interface.should eq('player1')
     end
 
-    it("Roleplayers have private access to other roleplayers in their context through methods named after their keys.") do
-      @testing_roleplayers_context.send(:role2).private_methods.should include('role1')
-      @testing_roleplayers_context.send(:role2).rolemethod2.should be(@testing_roleplayers_context.send(:role1))
+    it("Inside the context, roleplayers have private access to other roleplayers through methods named after their keys.") do
+      @testing_roleplayers_context.check_role_interaccess.should be_true
     end
-    it("However, they dont have a method to access the context.") do
-      expect {@testing_roleplayers_context.send(:role2).send(:context)}.to raise_error(NoMethodError)
-      @testing_roleplayers_context.send(:role2).instance_variables.should include('@context')
-      @testing_roleplayers_context.send(:role2).instance_variable_get(:@context).should be(@testing_roleplayers_context)
+    it("...and offer a public_method to access the context.") do
+      @testing_roleplayers_context.check_role1_context_access.should be_true
     end
 
     it("They also have private access to extra args received in the instantiation of its context...") do
-      @testing_roleplayers_context.private_methods.should include('settings')
+      @testing_roleplayers_context.check_role1_settings_access.should be_true
     end
     it("...calling #settings that returns a hash with all the extra args...") do
       @testing_roleplayers_context.send(:settings).should eq({:setting1 => :one, :setting2 => :two, :setting3 => :three})
@@ -89,6 +88,19 @@ describe 'RolePlayers' do
     it("...or #settings(key1, key2, ...) that returns a hash with the given extra args.") do
       @testing_roleplayers_context.send(:settings, :setting1, :setting3).should eq({:setting1 => :one, :setting3 => :three})
     end
+
+    it("But all these features, are only inside a context. Never out of it!") do
+      @player1.should_not respond_to(:role1method1)
+      @player2.private_methods.map(&:to_s).should_not include(:private_role2method2)
+      @player1.name.should eq('player1')
+      @player2.should_not respond_to(:role1)
+      @player2.should_not respond_to(:context)
+      @player1.should_not respond_to(:settings)
+      @player1.private_methods.map(&:to_s).should include('settings')
+      @player1.send(:settings).should be_nil
+    end
+
+
 
   end
 

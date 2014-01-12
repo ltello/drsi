@@ -26,7 +26,7 @@ describe 'Role' do
       end.to raise_error
     end
     it("A block defining rolemethods must be provided as well.") do
-      TestingRoleContext.roles[:rolename].should be_a(Class)
+      TestingRoleContext.roles[:rolename].should be_a(Module)
     end
   end
 

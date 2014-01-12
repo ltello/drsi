@@ -23,15 +23,16 @@ describe 'Interaction:' do
     end
 
     it("...the developer has access to all the roleplayers...") do
-      @test_interactions_context.interaction1.should be_a(TestingInteractionsContext::Role1)
-      @test_interactions_context.send(:role2).should be_a(TestingInteractionsContext::Role2)
+      @test_interactions_context.interaction1.should be(@player1)
+      @test_interactions_context.send(:role2).should be(@player2)
     end
     it("...via private instance methods named after their role keys.") do
-      @test_interactions_context.private_methods(false).should include('role1', 'role2')
+      @test_interactions_context.private_methods(false).map(&:to_s).should include('role1', 'role2')
     end
 
     it("He also have private access to extra args received in the instantiation of its context...") do
-      @test_interactions_context.private_methods.should include('settings')
+      @test_interactions_context.private_methods.map(&:to_s).should include('settings')
+      @test_interactions_context.public_methods.map(&:to_s).should_not include('settings')
     end
     it("...calling #settings that returns a hash with all the extra args...") do
       @test_interactions_context.send(:settings).should eq({:setting1 => :one, :setting2 => :two, :setting3 => :three})
