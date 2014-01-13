@@ -5,10 +5,8 @@ describe 'Role' do
   context "When defining roles inside a DCI::Context subclass..." do
     before(:all) do
       class TestingRoleContext < DCI::Context
-        role :rolename do
-        end
-        role :anotherrolename do
-        end
+        role :rolename
+        role :anotherrolename do end
       end
     end
     it("...you can define as many as you want.") do
@@ -25,8 +23,9 @@ describe 'Role' do
         end
       end.to raise_error
     end
-    it("A block defining rolemethods must be provided as well.") do
+    it("A block defining rolemethods can be provided as well.") do
       TestingRoleContext.roles[:rolename].should be_a(Module)
+      TestingRoleContext.roles[:anotherrolename].should be_a(Module)
     end
   end
 

@@ -19,7 +19,9 @@ describe 'RolePlayers' do
           def private_role2method2; :private_rolemethod_return_value end
         end
 
-        def check_role_interaccess; role2.role2method1 == role1 end
+        def check_role_interaccess
+          [role2.role2method1 == role1, !role2.respond_to?(:role1)].uniq == [true]
+        end
 
         def check_role1_identity(obj)
           [role1 == obj, role1.role1self == obj, role1.respond_to?(:role1method1), obj.respond_to?(:role1method1),
