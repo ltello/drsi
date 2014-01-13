@@ -19,11 +19,6 @@ describe 'Role MultiPlayers' do
           def private_role2method2; :private_rolemethod_return_value end
         end
 
-        def check_role1_identity(obj)
-          [role1 == obj, role1.role1self == obj, role1.respond_to?(:role1method1), obj.respond_to?(:role1method1),
-           role1.role1method1 == :role1method1_executed, obj.role1method1 == :role1method1_executed].uniq == [true]
-        end
-
         def get_role2_from_role1
          role1.send(:role2)
         end
@@ -126,8 +121,6 @@ describe 'Role MultiPlayers' do
       (@player2.private_methods.map(&:to_s) &  ['role1', 'context', 'settings']).should be_empty
       (@player22.private_methods.map(&:to_s) & ['role1', 'context', 'settings']).should be_empty
     end
-
-
 
   end
 

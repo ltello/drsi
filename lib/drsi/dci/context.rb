@@ -112,7 +112,7 @@ module DCI
     # Non players args are associated to instance_variables and readers defined.
     def initialize(args={})
       check_all_roles_provided_in!(args)
-      players, noplayers = args.partition {|key, *| roles.has_key?(key)}.map {|group| Hash[*group.flatten]}
+      players, noplayers = args.partition {|key, *| roles.has_key?(key)}.map {|group| Hash[*group.flatten(1)]}
       @_players = players
       @settings = noplayers
     end
