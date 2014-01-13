@@ -13,7 +13,7 @@ module DCI
           def self.roles; @roles end
           def roles; self.class.roles end
           private :roles
-          assign_unplay_roles_within_klass_instance_methods!(subklass)
+          assign_unplay_roles_within_instance_methods!
         end
       end
 
@@ -77,14 +77,14 @@ module DCI
         # player objects before the execution and to un-assign roles from player objects at the end of execution just
         # before returning control.
         # Also inject code to magically do the same to every new method defined in klass.
-        def assign_unplay_roles_within_klass_instance_methods!(klass)
-          klass.instance_methods(false).each do |existing_methodname|
-            assign_unplay_roles_within_klass_instance_method!(klass, existing_methodname)
+        def assign_unplay_roles_within_instance_methods!
+          instance_methods(false).each do |existing_methodname|
+            assign_unplay_roles_within_instance_method!(existing_methodname)
           end
-          def klass.method_added(methodname)
+          def self.method_added(methodname)
             if not @context_internals and public_method_defined?(methodname)
               @context_internals = true
-              assign_unplay_roles_within_klass_instance_method!(self, methodname)
+              assign_unplay_roles_within_instance_method!(methodname)
               @context_internals = false
             end
           end
@@ -92,8 +92,8 @@ module DCI
 
         # Wraps the given klass's methodname to assign/un-assign roles to player objects before and after actual method
         # execution.
-        def assign_unplay_roles_within_klass_instance_method!(klass, methodname)
-          klass.class_eval do
+        def assign_unplay_roles_within_instance_method!(methodname)
+          class_eval do
             method_object = instance_method(methodname)
             define_method(methodname) do |*args, &block|
               players_play_role!
