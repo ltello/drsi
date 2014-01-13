@@ -1,4 +1,5 @@
 require 'drsi/dci/role'
+require 'drsi/dci/multiplayer'
 
 module DCI
   class Context
@@ -154,14 +155,14 @@ module DCI
       #   - This context instance get access to this new role player through an instance method named after the role key.
       def assign_role_to_player!(rolekey, player)
         role_mod = roles[rolekey]
-        player.__play_role!(role_mod, self)
+        ::DCI::Multiplayer(player).each {|roleplayer| roleplayer.__play_role!(role_mod, self)}
         instance_variable_set(:"@#{rolekey}", player)
       end
 
       # Disassociates every role from the playing object.
       def players_unplay_role!
         roles.keys.each do |rolekey|
-          @_players[rolekey].__unplay_last_role!
+          ::DCI::Multiplayer(@_players[rolekey]).each {|roleplayer| roleplayer.__unplay_last_role!}
           # 'instance_variable_set(:"@#{rolekey}", nil)
         end
       end
