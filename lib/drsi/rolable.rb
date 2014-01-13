@@ -8,11 +8,18 @@ require 'drsi/module'
 # reusing the empty ones or adding and extending new ones when it is needed.
 module Rolable
 
-  # Make an object play the role defined as a module in 'mod'
-  def __play_role!(role_klass, context)
+  # Make an object play (in the given 'context') the role defined as a module in 'role_mod':
+  #  - Get or extend a new empty role module,
+  #  - Copy role_mod instance_methods into it,
+  #  - Inject context and settings methods.
+  def __play_role!(role_mod, a_context)
     new_role = __next_empty_role
-    new_role.__copy_instance_methods_from(role_klass)
-    new_role.send(:define_method, :context) {context}
+    new_role.__copy_instance_methods_from(role_mod)
+    new_role.class_exec(a_context) do |the_context|
+      private
+      define_method(:context) {the_context}
+      define_method(:settings) {|*keys| context.send(:settings, *keys)}
+    end
   end
 
   # Make an object stop playing the last role it plays, if any.
@@ -55,12 +62,7 @@ module Rolable
     end
 
     # The context a role is played within. This method must be overidden in every __role definition module.
-    def context
-      nil
-    end
-
-    # The role definition code also have private access to the extra args given in the context instantiation.
-    def settings(*keys)
-      context.send(:settings, *keys) if context
-    end
+    # def context
+    #   nil
+    # end
 end
