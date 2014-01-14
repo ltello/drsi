@@ -1,5 +1,4 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
-require 'ostruct'
 
 describe 'RolePlayers' do
 
@@ -39,7 +38,7 @@ describe 'RolePlayers' do
           role1.name
         end
 
-        def check_role1_context_access
+        def check_role1_private_context_access
           [!role1.respond_to?(:context), role1.private_methods.map(&:to_s).include?('context'), role1.send(:context) == self].uniq == [true]
         end
 
@@ -49,7 +48,8 @@ describe 'RolePlayers' do
         end
       end
 
-      @player1, @player2 = OpenStruct.new(:name => 'player1'), OpenStruct.new(:name => 'player2')
+      Player = Struct.new(:name)
+      @player1, @player2 = Player.new('player1'), Player.new('player2')
       @testing_roleplayers_context = TestingRoleplayersContext.new(:role1    => @player1,
                                                                    :role2    => @player2,
                                                                    :setting1 => :one,
@@ -74,8 +74,8 @@ describe 'RolePlayers' do
     it("Inside the context, roleplayers have private access to other roleplayers through methods named after their keys.") do
       @testing_roleplayers_context.check_role_interaccess.should be_true
     end
-    it("...and offer a public_method to access the context.") do
-      @testing_roleplayers_context.check_role1_context_access.should be_true
+    it("...as well as private access to the context.") do
+      @testing_roleplayers_context.check_role1_private_context_access.should be_true
     end
 
     it("They also have private access to extra args received in the instantiation of its context...") do
@@ -95,13 +95,10 @@ describe 'RolePlayers' do
       @player1.should_not respond_to(:role1method1)
       @player2.private_methods.map(&:to_s).should_not include(:private_role2method2)
       @player1.name.should eq('player1')
-      @player2.should_not respond_to(:role1)
-      @player2.should_not respond_to(:context)
-      @player2.should_not respond_to(:settings)
-      (@player2.private_methods.map(&:to_s) & ['role1', 'context', 'settings']).should be_empty
+      @player2.send(:context).should be_nil
+      expect {@player2.send(:settings)}.to raise_error
+      expect {@player2.send(:role1)}.to raise_error
     end
-
-
 
   end
 

@@ -1,11 +1,10 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
-require 'ostruct'
 
 describe 'Role MultiPlayers' do
 
   context "A role can be played by many objects in the same context at the same time" do
     before(:all) do
-      class TestingRoleplayersContext < DCI::Context
+      class TestingMultiplayersContext < DCI::Context
         role :role1 do
           def role1method1; :role1method1_executed end
           def role1self; self end
@@ -71,14 +70,15 @@ describe 'Role MultiPlayers' do
 
       end
 
-      @player1, @player2, @player22 = OpenStruct.new(:name => 'player1'), OpenStruct.new(:name => 'player2'), OpenStruct.new(:name => 'player22')
+      Player = Struct.new(:name)
+      @player1, @player2, @player22 = Player.new('player1'), Player.new('player2'), Player.new('player22')
       @multiplayer = DCI::Multiplayer[@player2, @player22]
       #puts @multiplayer.instance_variable_get(:@players)
-      @testing_roleplayers_context  = TestingRoleplayersContext.new(:role1    => @player1,
-                                                                    :role2    => @multiplayer,
-                                                                    :setting1 => :one,
-                                                                    :setting2 => :two,
-                                                                    :setting3 => :three)
+      @testing_roleplayers_context  = TestingMultiplayersContext.new(:role1    => @player1,
+                                                                     :role2    => @multiplayer,
+                                                                     :setting1 => :one,
+                                                                     :setting2 => :two,
+                                                                     :setting3 => :three)
     end
 
     it("For it to work, the developer has to give a rolekey the value of a DCI::Multiplayer instance when instantiating the context...") do
@@ -112,14 +112,12 @@ describe 'Role MultiPlayers' do
       @player22.private_methods.map(&:to_s).should_not include(:private_role2method2)
       @player2.name.should eq('player2')
       @player22.name.should eq('player22')
-      @player2.should_not  respond_to(:role1)
-      @player22.should_not respond_to(:role1)
-      @player2.should_not  respond_to(:context)
-      @player22.should_not respond_to(:context)
-      @player2.should_not  respond_to(:settings)
-      @player22.should_not respond_to(:settings)
-      (@player2.private_methods.map(&:to_s) &  ['role1', 'context', 'settings']).should be_empty
-      (@player22.private_methods.map(&:to_s) & ['role1', 'context', 'settings']).should be_empty
+      expect{@player2.send(:role1)}.to  raise_error
+      expect{@player22.send(:role1)}.to raise_error
+      @player2.send(:context).should  be_nil
+      @player22.send(:context).should be_nil
+      expect{@player2.send(:settings)}.to  raise_error
+      expect{@player22.send(:settings)}.to raise_error
     end
 
   end
