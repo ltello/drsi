@@ -147,7 +147,7 @@ module DCI
       end
 
       def players_already_playing_role_in_this_context?
-        a_player = @_players[roles.keys.first]
+        a_player = @_players.values.find {|player| !player.is_a?(::DCI::Multiplayer)}
         puts "Context #{self} - a_player #{a_player} has context #{a_player.send(:context)}. Result: #{a_player.send(:context) == self}"
         a_player.send(:context) == self
       end
