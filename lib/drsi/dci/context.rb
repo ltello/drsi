@@ -170,9 +170,9 @@ module DCI
         # puts "  Context: #{self} - assigning role #{rolekey} to #{player}"
         ::DCI::Multiplayer(player).each do |roleplayer|
           if player_already_playing_role_in_this_context?(roleplayer, rolekey)
-            extending_ticker.merge!([roleplayer, rolekey] => false)
+            extending_ticker.merge!("#{roleplayer.object_id}_#{rolekey}" => false)
           else
-            extending_ticker.merge!([roleplayer, rolekey] => true)
+            extending_ticker.merge!("#{roleplayer.object_id}_#{rolekey}" => true)
             roleplayer.__play_role!(rolekey, role_mod, self)
           end
         end
@@ -184,7 +184,7 @@ module DCI
         roles.keys.each do |rolekey|
           ::DCI::Multiplayer(@_players[rolekey]).each do |roleplayer|
             # puts "  Context: #{self} - un-assigning role #{rolekey} to #{roleplayer}"
-            roleplayer.__unplay_last_role! if extending_ticker[[roleplayer, rolekey]]
+            roleplayer.__unplay_last_role! if extending_ticker["#{roleplayer.object_id}_#{rolekey}"]
           end
           # 'instance_variable_set(:"@#{rolekey}", nil)
         end
