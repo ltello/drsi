@@ -97,12 +97,11 @@ module DCI
           class_eval do
             method_object = instance_method(methodname)
             define_method(methodname) do |*args, &block|
-              do_play_unplay_p = !players_already_playing_role_in_this_context?
               # puts "Context: #{self} - in method #{methodname} - #{do_play_unplay_p} assigning_roles"
-              players_play_role! if do_play_unplay_p
+              extending_ticker = players_play_role!
               method_object.bind(self).call(*args, &block).tap do
                 # puts "Context: #{self} - in method #{methodname} - #{do_play_unplay_p} un-assigning_roles"
-                players_unplay_role! if do_play_unplay_p
+                players_unplay_role!(extending_ticker)
               end
             end
           end
@@ -146,17 +145,18 @@ module DCI
         (roles.keys - players.keys)
       end
 
-      def players_already_playing_role_in_this_context?
-        a_player = @_players.values.find {|player| !player.is_a?(::DCI::Multiplayer)}
-        #puts "Context #{self} - a_player #{a_player} has context #{a_player.send(:context)}. Result: #{a_player.send(:context) == self}"
-        a_player.send(:context) == self
+      def player_already_playing_role_in_this_context?(player)
+        context = player.send(:context)
+        (context == self or context.class == self.class)
       end
 
       # Associates every role to the intended player.
       def players_play_role!
+        extending_ticker = {}
         roles.keys.each do |rolekey|
-          assign_role_to_player!(rolekey, @_players[rolekey])
+          assign_role_to_player!(rolekey, @_players[rolekey], extending_ticker: extending_ticker)
         end
+        extending_ticker
       end
 
       # Associates a role to an intended player:
@@ -164,19 +164,26 @@ module DCI
       #   - The player get access to the context it is playing.
       #   - The player get access to the rest of players in its context through instance methods named after their role keys.
       #   - This context instance get access to this new role player through an instance method named after the role key.
-      def assign_role_to_player!(rolekey, player)
+      def assign_role_to_player!(rolekey, player, extending_ticker:{})
         role_mod = roles[rolekey]
         # puts "  Context: #{self} - assigning role #{rolekey} to #{player}"
-        ::DCI::Multiplayer(player).each {|roleplayer| roleplayer.__play_role!(role_mod, self)}
+        ::DCI::Multiplayer(player).each do |roleplayer|
+          if player_already_playing_role_in_this_context?(roleplayer)
+            extending_ticker.merge!(roleplayer => false)
+          else
+            extending_ticker.merge!(roleplayer => true)
+            roleplayer.__play_role!(role_mod, self)
+          end
+        end
         instance_variable_set(:"@#{rolekey}", player)
       end
 
       # Disassociates every role from the playing object.
-      def players_unplay_role!
+      def players_unplay_role!(extending_ticker)
         roles.keys.each do |rolekey|
           ::DCI::Multiplayer(@_players[rolekey]).each do |roleplayer|
             # puts "  Context: #{self} - un-assigning role #{rolekey} to #{roleplayer}"
-            roleplayer.__unplay_last_role!
+            roleplayer.__unplay_last_role! if extending_ticker[roleplayer]
           end
           # 'instance_variable_set(:"@#{rolekey}", nil)
         end
