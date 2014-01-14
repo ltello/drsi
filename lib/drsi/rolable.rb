@@ -12,11 +12,12 @@ module Rolable
   #  - Get or extend a new empty role module,
   #  - Copy role_mod instance_methods into it,
   #  - Inject context and settings methods.
-  def __play_role!(role_mod, a_context)
+  def __play_role!(a_rolekey, role_mod, a_context)
     new_role = __next_empty_role
     new_role.__copy_instance_methods_from(role_mod)
-    new_role.class_exec(a_context) do |the_context|
+    new_role.class_exec(a_context, a_rolekey) do |the_context, the_rolekey|
       private
+      define_method(:rolekey) {the_rolekey}
       define_method(:context) {the_context}
       define_method(:settings) {|*keys| context.send(:settings, *keys)}
     end
@@ -63,6 +64,11 @@ module Rolable
 
     # The context within this object is playing its last role. This method must be overidden in every __role definition module.
     def context
+      nil
+    end
+
+    # The rolekey this object is playing its last role. This method must be overidden in every __role definition module.
+    def rolekey
       nil
     end
 end

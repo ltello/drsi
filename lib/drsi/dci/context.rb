@@ -145,9 +145,10 @@ module DCI
         (roles.keys - players.keys)
       end
 
-      def player_already_playing_role_in_this_context?(player)
+      def player_already_playing_role_in_this_context?(player, rolekey)
         context = player.send(:context)
-        (context == self or context.class == self.class)
+        return false unless player.send(:rolekey) == rolekey
+        context == self or context.class == self.class
       end
 
       # Associates every role to the intended player.
@@ -168,11 +169,11 @@ module DCI
         role_mod = roles[rolekey]
         # puts "  Context: #{self} - assigning role #{rolekey} to #{player}"
         ::DCI::Multiplayer(player).each do |roleplayer|
-          if player_already_playing_role_in_this_context?(roleplayer)
+          if player_already_playing_role_in_this_context?(roleplayer, rolekey)
             extending_ticker.merge!(roleplayer => false)
           else
             extending_ticker.merge!(roleplayer => true)
-            roleplayer.__play_role!(role_mod, self)
+            roleplayer.__play_role!(rolekey, role_mod, self)
           end
         end
         instance_variable_set(:"@#{rolekey}", player)
