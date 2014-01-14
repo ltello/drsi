@@ -97,8 +97,13 @@ module DCI
           class_eval do
             method_object = instance_method(methodname)
             define_method(methodname) do |*args, &block|
-              players_play_role!
-              method_object.bind(self).call(*args, &block).tap {players_unplay_role!}
+              do_play_unplay_p = !players_already_playing_role_in_this_context?
+              puts "in method #{methodname} - #{do_play_unplay_p} assigning_roles"
+              players_play_role! if do_play_unplay_p
+              method_object.bind(self).call(*args, &block).tap do
+                puts "in method #{methodname} - #{do_play_unplay_p} un-assigning_roles"
+                players_unplay_role! if do_play_unplay_p
+              end
             end
           end
         end
@@ -141,6 +146,11 @@ module DCI
         (roles.keys - players.keys)
       end
 
+      def players_already_playing_role_in_this_context?
+        a_player = @_players[roles.keys.first]
+        a_player.send(:context) == self
+      end
+
       # Associates every role to the intended player.
       def players_play_role!
         roles.keys.each do |rolekey|
@@ -155,6 +165,7 @@ module DCI
       #   - This context instance get access to this new role player through an instance method named after the role key.
       def assign_role_to_player!(rolekey, player)
         role_mod = roles[rolekey]
+        puts "assigning role #{rolekey} to #{player} in #{self}"
         ::DCI::Multiplayer(player).each {|roleplayer| roleplayer.__play_role!(role_mod, self)}
         instance_variable_set(:"@#{rolekey}", player)
       end
@@ -162,7 +173,10 @@ module DCI
       # Disassociates every role from the playing object.
       def players_unplay_role!
         roles.keys.each do |rolekey|
-          ::DCI::Multiplayer(@_players[rolekey]).each {|roleplayer| roleplayer.__unplay_last_role!}
+          ::DCI::Multiplayer(@_players[rolekey]).each do |roleplayer|
+            puts "un-assigning role #{rolekey} to #{roleplayer} in #{self}"
+            roleplayer.__unplay_last_role!
+          end
           # 'instance_variable_set(:"@#{rolekey}", nil)
         end
       end

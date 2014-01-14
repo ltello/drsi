@@ -61,8 +61,8 @@ module Rolable
       __roles << role
     end
 
-    # The context a role is played within. This method must be overidden in every __role definition module.
-    # def context
-    #   nil
-    # end
+    # The context within this object is playing its last role. This method must be overidden in every __role definition module.
+    def context
+      nil
+    end
 end
