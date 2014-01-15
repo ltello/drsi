@@ -7,6 +7,7 @@ class Module
       type    = methods_type.to_s.split('_').first.to_sym
       __add_instance_methods(methods, type)
     end
+    self
   end
 
 

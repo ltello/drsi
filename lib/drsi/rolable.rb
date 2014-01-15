@@ -13,8 +13,7 @@ module Rolable
   #  - Copy role_mod instance_methods into it,
   #  - Inject context and settings methods.
   def __play_role!(a_rolekey, role_mod, a_context)
-    new_role = __next_empty_role
-    new_role.__copy_instance_methods_from(role_mod)
+    new_role = __next_role_for(role_mod)
     new_role.class_exec(a_context, a_rolekey) do |the_context, the_rolekey|
       private
       define_method(:rolekey) {the_rolekey}
@@ -49,17 +48,18 @@ module Rolable
 
     # Returns the highest role module free of methods. If none, creates a new empty module ready to be filled with
     # role instance methods.
-    def __next_empty_role
+    def __next_role_for(mod)
       @__last_role_index = __last_role_index + 1
-      __add_empty_role! unless __last_role
-      __last_role
+      new_role = __last_role
+      new_role ? new_role.__copy_instance_methods_from(mod) : __add_role_for(mod)
     end
 
     # Creates and extends a new module ready to be filled with role instance methods.
-    def __add_empty_role!
-      role = Module.new
+    def __add_role_for(mod)
+      role = mod.dup
       extend(role)
       __roles << role
+      role
     end
 
     # The context within this object is playing its last role. This method must be overidden in every __role definition module.
