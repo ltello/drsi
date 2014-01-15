@@ -146,8 +146,8 @@ module DCI
       end
 
       def player_already_playing_role_in_this_context?(player, rolekey)
-        context = player.send(:context)
-        return false unless player.send(:rolekey) == rolekey
+        context = player.send(:__context)
+        return false unless player.send(:__rolekey) == rolekey
         context == self or context.class == self.class
       end
 

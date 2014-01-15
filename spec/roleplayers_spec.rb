@@ -39,7 +39,8 @@ describe 'RolePlayers' do
         end
 
         def check_role1_private_context_access
-          [!role1.respond_to?(:context), role1.private_methods.map(&:to_s).include?('context'), role1.send(:context) == self].uniq == [true]
+          [!role1.respond_to?(:__context), role1.private_methods.map(&:to_s).include?('__context'), role1.send(:__context) == self,
+           !role1.respond_to?(:__rolekey), role1.private_methods.map(&:to_s).include?('__rolekey'), role1.send(:__rolekey) == :role1].uniq == [true]
         end
 
         def check_role1_settings_access
@@ -95,7 +96,7 @@ describe 'RolePlayers' do
       @player1.should_not respond_to(:role1method1)
       @player2.private_methods.map(&:to_s).should_not include(:private_role2method2)
       @player1.name.should eq('player1')
-      @player2.send(:context).should be_nil
+      @player2.send(:__context).should be_nil
       expect {@player2.send(:settings)}.to raise_error
       expect {@player2.send(:role1)}.to raise_error
     end

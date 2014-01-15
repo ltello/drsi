@@ -54,7 +54,8 @@ describe 'Role MultiPlayers' do
 
         def roles2_have_context_private_access?
           role2[0..-1].all? do |roleplayer|
-            [!roleplayer.respond_to?(:context), roleplayer.private_methods.map(&:to_s).include?('context'), roleplayer.send(:context) == self].uniq == [true]
+            [!roleplayer.respond_to?(:__context), roleplayer.private_methods.map(&:to_s).include?('__context'), roleplayer.send(:__context) == self,
+             !roleplayer.respond_to?(:__rolekey), roleplayer.private_methods.map(&:to_s).include?('__rolekey'), roleplayer.send(:__rolekey) == :role2].uniq == [true]
           end
         end
 
@@ -97,7 +98,7 @@ describe 'Role MultiPlayers' do
       @testing_roleplayers_context.roles2_external_interfaces_accessible?(@player2.name, @player22.name).should be_true
     end
 
-    it("They have private access to the context.") do
+    it("They have private access to the context via #__context.") do
       @testing_roleplayers_context.roles2_have_context_private_access?.should be_true
     end
 
@@ -114,8 +115,8 @@ describe 'Role MultiPlayers' do
       @player22.name.should eq('player22')
       expect{@player2.send(:role1)}.to  raise_error
       expect{@player22.send(:role1)}.to raise_error
-      @player2.send(:context).should  be_nil
-      @player22.send(:context).should be_nil
+      @player2.send(:__context).should  be_nil
+      @player22.send(:__context).should be_nil
       expect{@player2.send(:settings)}.to  raise_error
       expect{@player22.send(:settings)}.to raise_error
     end
