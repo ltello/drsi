@@ -16,11 +16,7 @@ class Module
     # Also, set their visibility from 'type' (:public, :protected, :private).
     def __add_instance_methods(methods, type)
       module_exec(methods, type) do |methods, type|
-        methods.each do |method|
-          define_method(method.name) do |*args, &block|
-            method.bind(self).call(*args, &block)
-          end
-        end
+        methods.each {|method| define_method(method.name, method)}
         send(type, *methods.map(&:name))
       end
     end
